@@ -74,7 +74,7 @@ def load_model(model_name):
 
     # Check if GPU (CUDA) is available, otherwise use CPU
     if torch.cuda.is_available():
-        device = "cuda" if torch.cuda.is_available()
+        device = "cuda" 
     else:
         if torch.xpu.is_available():
             device = "xpu"

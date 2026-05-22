@@ -6,7 +6,7 @@ from datetime import datetime
 from time import sleep
 from tqdm import tqdm
 from pydub import AudioSegment
-
+import os
 
 class TranscriptSummarizer:
     """Handles transcript summarization using LLM."""
@@ -55,14 +55,20 @@ class TranscriptSummarizer:
             logging.info("Starting transcript processing")
             self.audio_path = audio_path
 
-            transcript = self._read_transcript(transcript_path)
+            transcript = self._read_transcript(transcript_path)            
 
             with tqdm(total=1, desc="Generating summary", unit="summary") as pbar:
                 summary = self._generate_summary(transcript)
                 pbar.update(1)
 
             metadata = self._prepare_metadata(audio_path)
-            formatted_doc = self._format_document({"summary": summary}, metadata)
+            formatted_doc = self._format_document(
+                {
+                    "summary": summary, 
+                    "transcription": transcript
+                }, 
+                metadata
+            )
             return self._save_document(formatted_doc)
 
         except Exception as e:
@@ -200,10 +206,18 @@ class TranscriptSummarizer:
         try:
             logging.info("Formatting document")
             metadata_section = self._format_metadata(metadata)
+            
+            try:
+                rel_audio_path = os.path.relpath(self.audio_path)
+            except ValueError:
+                # Fallback to original path if relative resolution fails (e.g., across different drives on Windows)
+                rel_audio_path = self.audio_path
 
             return self.config["document_format"]["template"].format(
                 metadata_section=metadata_section,
                 summary=summaries["summary"],
+                transcription=summaries["transcription"],
+                audio_path=rel_audio_path,
                 generation_timestamp=datetime.now().strftime(
                     self.config["document_format"]["metadata"]["date_format"]
                 ),
