@@ -1,9 +1,24 @@
 llm:
-  model_name: "gemma-4-e2b-uncensored-pruned-textonly-englishonly" # CUSTOMIZE (select from available models)
+  # Active Provider: Options are "ollama", "openai", or "lm_studio"
+  provider: "ollama"
+  model_name: "llama3.1:8b" # CUSTOMIZE (select from available models)
   max_retries: 5
   retry_delay: 3
-  api_url: "http://localhost:12349/v1/chat/completions" #/v1/chat/completions for llmstudio, /generate for openai
-  api_mode: "openai"
+
+  # --- Provider Specific Settings ---
+  ollama:
+    base_url: "http://localhost:11434"
+    endpoint: "/api/generate"
+  
+  lm_studio:
+    base_url: "http://localhost:12349"
+    endpoint: "/v1/chat/completions"
+
+  openai:
+    base_url: "https://api.openai.com"
+    endpoint: "/v1/chat/completions"
+    api_key: "your-api-key-here"
+    
   options:
     temperature: 0.3
     top_p: 0.5
@@ -98,4 +113,10 @@ document_format:
     {summary}
 
     ---
+    ## Raw Transcript
+    {transcription}
+
+    ---
+    **Original Audio:** [{audio_path}]({audio_path})
+
     Generated on: {generation_timestamp}

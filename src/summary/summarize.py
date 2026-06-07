@@ -12,17 +12,38 @@ class TranscriptSummarizer:
     """Handles transcript summarization using LLM."""
 
     def __init__(self, config):
-        """Initialize with configuration."""
+        """Initialize with configuration and safe provider fallbacks."""
         self.config = config
-        self.model_name = config["llm"]["model_name"]
-        self.api_url = config["llm"]["api_url"]
-        self.api_mode = (
-            config["llm"].get("api_mode", "ollama").lower()
-        )  # Default to 'ollama' for backward compatibility
-        self.max_retries = config["llm"]["max_retries"]
-        self.retry_delay = config["llm"]["retry_delay"]
-        self.llm_options = config["llm"]["options"]
-        logging.info(f"TranscriptSummarizer initialized with api_mode: {self.api_mode}")
+        llm_config = config.get("llm", {})
+        
+        self.model_name = llm_config.get("model_name", "llama3.1:8b")
+        self.max_retries = llm_config.get("max_retries", 5)
+        self.retry_delay = llm_config.get("retry_delay", 3)
+        self.llm_options = llm_config.get("options", {})
+
+        # 1. Determine the provider
+        if "provider" in llm_config:
+            self.provider = llm_config["provider"].lower()
+        elif "api_mode" in llm_config:
+            self.provider = llm_config["api_mode"].lower()
+        elif "api_url" in llm_config and "/v1/" in llm_config["api_url"]:
+            self.provider = "lm_studio"
+        else:
+            self.provider = "ollama"
+
+        # 2. Build the API URL dynamically
+        if "api_url" in llm_config and not any(p in llm_config for p in ["ollama", "lm_studio", "openai"]):
+            self.api_url = llm_config["api_url"]
+        else:
+            provider_settings = llm_config.get(self.provider, {})
+            base_url = provider_settings.get("base_url", "http://localhost:11434")
+            endpoint = provider_settings.get("endpoint", "/api/generate")
+            self.api_url = f"{base_url.rstrip('/')}{endpoint}"
+
+        # 3. Pull optional API keys
+        self.api_key = llm_config.get("openai", {}).get("api_key", None)
+
+        logging.info(f"TranscriptSummarizer initialized. Provider: {self.provider} | URL: {self.api_url}")
 
     def _read_transcript(self, transcript_path: str) -> str:
         """Read transcript file.
@@ -76,28 +97,34 @@ class TranscriptSummarizer:
             raise
 
     def _generate_summary(self, text: str) -> str:
-        """Generate summary using LLM with support for multiple API modes."""
+        """Generate summary using LLM with support for multiple API providers."""
         prompt = self.config["prompts"]["summary_prompt"]
         full_prompt = f"{prompt}\n\nText: {text}"
 
         for attempt in range(self.max_retries):
             try:
                 logging.info(
-                    f"Attempt {attempt + 1} to generate summary (mode: {self.api_mode})"
+                    f"Attempt {attempt + 1} to generate summary (Provider: {self.provider})"
                 )
 
-                if self.api_mode == "openai":
+                # Both OpenAI and LM Studio use the exact same payload structure
+                if self.provider in ["openai", "lm_studio"]:
                     payload = self._build_openai_payload(full_prompt)
+                    
+                    headers = {"Content-Type": "application/json"}
+                    if self.api_key and self.provider == "openai":
+                        headers["Authorization"] = f"Bearer {self.api_key}"
+
                     response = requests.post(
                         self.api_url,
                         json=payload,
                         timeout=600,
-                        headers={"Content-Type": "application/json"},
+                        headers=headers,
                     )
                     response.raise_for_status()
                     result = self._parse_openai_response(response.json())
 
-                else:  # Default to Ollama mode for backward compatibility
+                else:  # Default to Ollama mode
                     payload = self._build_ollama_payload(full_prompt)
                     response = requests.post(self.api_url, json=payload, timeout=600)
                     response.raise_for_status()
