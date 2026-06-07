@@ -7,7 +7,7 @@ import warnings
 import numpy as np
 import math
 from pydub import AudioSegment
-from preprocess import preprocess_audio
+from src.audio.preprocess import preprocess_audio
 import argparse
 
 
