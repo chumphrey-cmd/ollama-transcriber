@@ -230,41 +230,25 @@ def main():
                 print(f"Found {len(processed_stems)} previously processed files. These will be skipped.")
         
 
-        # Check if GPU (CUDA) is available, otherwise try XPU, else default to CPU
+        # --- Hardware Device Selection ---
         if torch.cuda.is_available():
-            device = "cuda"         
+            device = "cuda"
+            print("CUDA detected. Using GPU for transcription.")
+        elif hasattr(torch, "xpu") and torch.xpu.is_available():
+            device = "xpu"
+            print("XPU detected. Using Intel GPU for transcription.")
         else:
-            if torch.xpu.is_available():
-                device = "xpu"
-            else:
-                logging.info("Audio already in correct format. Skipping conversion.")
-                print("Audio already in correct format. Skipping conversion.")
-        except RuntimeError as e:
-            print(f"Exception caught in audio conversion: {e}")
-            logging.error(f"FFmpeg Error during conversion: {e}")
-            print(
-                "FFmpeg not found. Please ensure ffmpeg is installed and in your PATH.\n"
-                "  Linux:   sudo apt install ffmpeg   (or your distro's package manager)\n"
-                "  macOS:   brew install ffmpeg\n"
-                "  Windows: choco install ffmpeg"
-            )
-            sys.exit(1)
-        except ValueError as e:
-            print(f"Exception caught in audio conversion: {e}")
-            logging.error(f"Error during audio conversion: {e}")
-            print(f"Error: {e}")
-            sys.exit(1)
-        except Exception as e:
-            print(f"Exception caught in audio conversion: {e}")
-            logging.error(f"Unexpected error during audio conversion: {e}")
-            print(f"Error: {e}")
-            sys.exit(1)
+            device = "cpu"
+            print("No GPU detected. Defaulting to CPU for transcription.")
 
         # Step 4: Load Whisper Model
         try:
-            logging.info(f"Loading Whisper model: {config['transcription']['model_selection']}")
-            print(f"Loading Whisper model '{config['transcription']['model_selection']}' on cuda...")
-            model = whisper.load_model(config['transcription']['model_selection'])
+            logging.info(f"Loading Whisper model: {config['transcription']['model_selection']} on {device}")
+            print(f"Loading Whisper model '{config['transcription']['model_selection']}' on {device}...")
+            
+            # Load the model and ensure it uses the correct hardware device
+            whisper_model = whisper.load_model(config['transcription']['model_selection'], device=device)
+            
             logging.info("Whisper model loaded successfully")
             print("Whisper model loaded successfully")
         except Exception as e:
@@ -272,6 +256,7 @@ def main():
             print(f"Fatal Error: Could not load Whisper model: {e}")
             sys.exit(1)
 
+        # Step 5: Initialize Summarizer
         logging.info(f"Initializing LLM Summarizer with model: {config['llm']['model_name']}")
         print("Initializing Summarizer...")
         try:
