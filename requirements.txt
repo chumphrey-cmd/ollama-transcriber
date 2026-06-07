@@ -1,8 +1,9 @@
-git+https://github.com/openai/whisper.git
+openai-whisper>=20240930
+torch>=2.0
 numpy>=1.26.4
 pydub>=0.25.1
+audioop-lts>=0.2.1; python_version >= "3.13"
 noisereduce>=3.0.2
 PyYAML>=6.0.2
 requests>=2.32.3
 tqdm>=4.66.5
-setuptools-rust

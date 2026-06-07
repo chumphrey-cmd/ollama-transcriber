@@ -11,11 +11,11 @@ from torch.xpu import is_available
 project_root = Path(__file__).parent
 sys.path.append(str(project_root))
 
-# Ensure the user is running a supported Python version (3.8 to 3.11)
-if sys.version_info < (3, 8) or sys.version_info >= (3, 12):
+# Ensure the user is running a supported Python version (3.8+)
+if sys.version_info < (3, 8):
     print("ERROR: Unsupported Python Version")
     print(f"You are running Python {sys.version_info.major}.{sys.version_info.minor}.")
-    print("Ollama Transcriber requires Python 3.8, 3.9, 3.10, or 3.11.")
+    print("Ollama Transcriber requires Python 3.8 or later.")
     print("Please use the correct version or activate your virtual environment.\n")
     sys.exit(1)
 
@@ -237,14 +237,36 @@ def main():
             if torch.xpu.is_available():
                 device = "xpu"
             else:
-                device = "cpu"
+                logging.info("Audio already in correct format. Skipping conversion.")
+                print("Audio already in correct format. Skipping conversion.")
+        except RuntimeError as e:
+            print(f"Exception caught in audio conversion: {e}")
+            logging.error(f"FFmpeg Error during conversion: {e}")
+            print(
+                "FFmpeg not found. Please ensure ffmpeg is installed and in your PATH.\n"
+                "  Linux:   sudo apt install ffmpeg   (or your distro's package manager)\n"
+                "  macOS:   brew install ffmpeg\n"
+                "  Windows: choco install ffmpeg"
+            )
+            sys.exit(1)
+        except ValueError as e:
+            print(f"Exception caught in audio conversion: {e}")
+            logging.error(f"Error during audio conversion: {e}")
+            print(f"Error: {e}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"Exception caught in audio conversion: {e}")
+            logging.error(f"Unexpected error during audio conversion: {e}")
+            print(f"Error: {e}")
+            sys.exit(1)
 
-        # Initialize Models ONCE
-        logging.info(f"Loading Whisper model: {config['transcription']['model_selection']} on {device}")
-        print(f"Loading Whisper model '{config['transcription']['model_selection']}' into memory...")
+        # Step 4: Load Whisper Model
         try:
-            whisper_model = whisper.load_model(config["transcription"]["model_selection"], device=device)
-            print("Whisper model loaded successfully.")
+            logging.info(f"Loading Whisper model: {config['transcription']['model_selection']}")
+            print(f"Loading Whisper model '{config['transcription']['model_selection']}' on cuda...")
+            model = whisper.load_model(config['transcription']['model_selection'])
+            logging.info("Whisper model loaded successfully")
+            print("Whisper model loaded successfully")
         except Exception as e:
             logging.error(f"Error loading Whisper model: {e}")
             print(f"Fatal Error: Could not load Whisper model: {e}")

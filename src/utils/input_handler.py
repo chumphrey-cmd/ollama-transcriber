@@ -1,13 +1,22 @@
-import tkinter as tk
-from tkinter import filedialog
-
 def select_audio_file():
     """
     Opens a file dialog for selecting an audio file.
-    
+
+    Requires python3-tk (tkinter) to be installed on Linux:
+        sudo apt install python3-tk
+
     Returns:
         str: Path to selected audio file, or None if canceled
     """
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+    except ImportError:
+        print("Error: tkinter is not installed. The --gui option requires it.")
+        print("  Linux:   sudo apt install python3-tk")
+        print("  Or use --audio <path> instead.")
+        return None
+
     root = tk.Tk()
     root.withdraw()  # Hide the main window
     file_path = filedialog.askopenfilename(

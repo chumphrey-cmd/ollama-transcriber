@@ -8,10 +8,10 @@ def check_ffmpeg():
         subprocess.run(['ffmpeg', '-version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
         return True
     except (subprocess.SubprocessError, FileNotFoundError):
-        print("FFmpeg not found. Please ensure ffmpeg.exe is:\n"
-              "1. Added to system PATH, or\n"
-              "2. Placed in the same directory as this script\n"
-              "Download FFmpeg from: https://github.com/BtbN/FFmpeg-Builds/releases")
+        print("FFmpeg not found. Please ensure ffmpeg is installed and in your PATH.\n"
+              "  Linux:   sudo apt install ffmpeg   (or your distro's package manager)\n"
+              "  macOS:   brew install ffmpeg\n"
+              "  Windows: choco install ffmpeg")
         return False  # Return False if FFmpeg is not found
 
 def get_supported_formats():

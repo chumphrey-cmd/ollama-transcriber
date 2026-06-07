@@ -10,7 +10,61 @@ The tool automatically generates structured summaries including:
 - Meeting metadata
 
 > [!NOTE]
-> This project is currently functional and tested on **Windows 11**.
+> This project is functional on **Linux** and **Windows 11**.
+
+---
+
+## Linux Setup: Using Python Virtual Environment (Recommended)
+
+### Prerequisites
+
+Install the system-level dependencies using your package manager:
+
+```bash
+# Debian/Ubuntu
+sudo apt install python3 python3-venv python3-pip ffmpeg
+
+# Fedora
+sudo dnf install python3 python3-pip ffmpeg-free
+
+# Arch
+sudo pacman -S python python-pip ffmpeg
+```
+
+You also need [Ollama](https://ollama.com/download) installed and a model pulled (e.g., `ollama pull llama3.1:8b`).
+
+### Automated Setup
+
+From the root of the cloned repository, run the install script:
+
+```bash
+# CPU-only PyTorch (works on any machine)
+./install.sh
+
+# Or, if you have an NVIDIA GPU with CUDA:
+./install.sh --cuda
+```
+
+The script creates a virtual environment, installs all Python dependencies, and verifies your setup.
+
+<details>
+<summary><strong>Linux Manual Setup (Click to expand)</strong></summary>
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+
+# CPU-only PyTorch:
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+# Or CUDA PyTorch (see https://pytorch.org/get-started/locally/):
+# pip install torch torchvision torchaudio
+
+pip install -r requirements.txt
+python pytorch_verify.py
+```
+
+</details>
 
 ---
 
@@ -46,7 +100,7 @@ The script will automatically check for missing dependencies, set up your Python
 
 ### Select Python Interpreter Version
 
-This project requires a Python version between **3.8 and 3.11** (Python 3.10.11 is recommended). It is highly recommended to set up a virtual environment (`python -m venv venv`) before proceeding.
+This project requires **Python 3.8 or later**. It is highly recommended to set up a virtual environment (`python -m venv venv`) before proceeding.
 
 ### Install `ffmpeg` Globally as PowerShell Administrator
 
