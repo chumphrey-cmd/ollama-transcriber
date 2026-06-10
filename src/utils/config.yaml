@@ -22,7 +22,7 @@ llm:
   options:
     temperature: 0.3
     top_p: 0.5
-    num_ctx: 16384 # CUSTOMIZE (options include 4096, 8192, 16384, 32768, 65536 depnding on RAM)
+    num_ctx: 16384 # CUSTOMIZE (options include 4096, 8192, 16384, 32768, 65536 depending on RAM)
     num_predict: 1024
     top_k: 40
     repeat_penalty: 1.15

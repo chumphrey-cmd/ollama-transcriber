@@ -15,7 +15,7 @@ class TranscriptSummarizer:
         """Initialize with configuration and safe provider fallbacks."""
         self.config = config
         llm_config = config.get("llm", {})
-        
+
         self.model_name = llm_config.get("model_name", "llama3.1:8b")
         self.max_retries = llm_config.get("max_retries", 5)
         self.retry_delay = llm_config.get("retry_delay", 3)
@@ -24,6 +24,7 @@ class TranscriptSummarizer:
         # 1. Determine the provider
         if "provider" in llm_config:
             self.provider = llm_config["provider"].lower()
+        # LEGACY FALLBACKS: Support older config.yaml files that haven't been updated
         elif "api_mode" in llm_config:
             self.provider = llm_config["api_mode"].lower()
         elif "api_url" in llm_config and "/v1/" in llm_config["api_url"]:
@@ -32,6 +33,7 @@ class TranscriptSummarizer:
             self.provider = "ollama"
 
         # 2. Build the API URL dynamically
+        # LEGACY FALLBACK: If user's old config strictly defines api_url, use it
         if "api_url" in llm_config and not any(p in llm_config for p in ["ollama", "lm_studio", "openai"]):
             self.api_url = llm_config["api_url"]
         else:
